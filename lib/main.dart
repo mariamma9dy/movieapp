@@ -4,19 +4,23 @@ import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 import 'Providers/FirebaseAuthProvider.dart';
-import 'Views/Screens/RegisterScreen.dart';
 import 'package:movieapp/Views/Screens/SplashScreen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'Providers/MovieProvider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await dotenv.load(fileName: '.env');
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => FirebaseAuthProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => FirebaseAuthProvider()),
+        ChangeNotifierProvider(create: (_) => MovieProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -29,7 +33,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Movie App',
+      theme: ThemeData.dark(),
       home: const SplashScreen(),
     );
   }
