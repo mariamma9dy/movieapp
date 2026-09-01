@@ -19,9 +19,9 @@ class _HomeScreenState extends State<HomeScreen> {
   late FirebaseAuthController authController;
   late MovieController movieController;
 
-  bool _moviesLoaded = false;
+  final TextEditingController searchController = TextEditingController();
 
-  // MARK: - Provider & Controller
+  bool _moviesLoaded = false;
 
   @override
   void didChangeDependencies() {
@@ -32,27 +32,28 @@ class _HomeScreenState extends State<HomeScreen> {
       listen: false,
     );
 
-    authController = FirebaseAuthController(
-      provider: authProvider,
-    );
+    final movieProvider = Provider.of<MovieProvider>(context, listen: false);
 
-    final movieProvider = Provider.of<MovieProvider>(
-      context,
-      listen: false,
-    );
+    authController = FirebaseAuthController(provider: authProvider);
 
-    movieController = MovieController(
-      provider: movieProvider,
-    );
+    movieController = MovieController(provider: movieProvider);
 
     if (!_moviesLoaded) {
       _moviesLoaded = true;
-      movieController.getMovies();
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        movieController.getMovies();
+      });
     }
   }
 
-  // MARK: - Logout
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
+  // MARK: - Logout
   Future<void> logOut() async {
     final success = await authController.logOut();
 
@@ -61,20 +62,19 @@ class _HomeScreenState extends State<HomeScreen> {
     if (success) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (_) => const LogInScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const LogInScreen()),
         (route) => false,
       );
     }
   }
 
-  // MARK: - Movie Section
+  // MARK: - Search
+  void searchMovies(String value) {
+    movieController.searchMovies(value);
+  }
 
-  Widget _buildMovieSection({
-    required String title,
-    required List movies,
-  }) {
+  // MARK: - Movie Section
+  Widget _buildMovieSection({required String title, required List movies}) {
     if (movies.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -86,10 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
         ),
 
@@ -97,19 +94,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
         SizedBox(
           height: 280,
-          child: ListView.builder(
+          child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: movies.length,
+            separatorBuilder: (_, __) {
+              return const SizedBox(width: 12);
+            },
             itemBuilder: (context, index) {
               return SizedBox(
                 width: 155,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: MovieCard(
-                    movie: movies[index],
-                  ),
-                ),
+                child: MovieCard(movie: movies[index]),
               );
             },
           ),
@@ -120,33 +115,56 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // MARK: - Movies
+  // MARK: - Search Results
+  Widget _buildSearchResults(MovieProvider provider) {
+    if (provider.isSearching) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-  Widget _buildMovies(MovieProvider provider) {
-    if (provider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
+    if (provider.searchErrorMessage != null) {
+      return Center(
+        child: Text(provider.searchErrorMessage!, textAlign: TextAlign.center),
       );
     }
-  
+
+    if (provider.searchResults.isEmpty) {
+      return const Center(
+        child: Text(
+          'No animation movies found.',
+          style: TextStyle(fontSize: 16),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.55,
+      ),
+      itemCount: provider.searchResults.length,
+      itemBuilder: (context, index) {
+        return MovieCard(movie: provider.searchResults[index]);
+      },
+    );
+  }
+
+  // MARK: - Home Movies
+  Widget _buildMovies(MovieProvider provider) {
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     if (provider.errorMessage != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 50,
-            ),
+            Text(provider.errorMessage!, textAlign: TextAlign.center),
 
             const SizedBox(height: 12),
-
-            Text(
-              provider.errorMessage!,
-              textAlign: TextAlign.center,
-            ),
-
-            const SizedBox(height: 16),
 
             ElevatedButton(
               onPressed: movieController.getMovies,
@@ -157,18 +175,10 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (provider.popularMovies.isEmpty &&
-        provider.topRatedMovies.isEmpty &&
-        provider.nowPlayingMovies.isEmpty) {
-      return const Center(
-        child: Text('No movies found'),
-      );
-    }
-
     return RefreshIndicator(
       onRefresh: movieController.getMovies,
       child: ListView(
-        padding: const EdgeInsets.only(top: 8),
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
           _buildMovieSection(
             title: '🔥 Popular Animation',
@@ -191,75 +201,76 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // MARK: - UI
-
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<FirebaseAuthProvider>();
-    final movieProvider = context.watch<MovieProvider>();
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'ToonBox',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('ToonBox'),
         actions: [
-          IconButton(
-            onPressed: authProvider.isLoading ? null : logOut,
-            icon: const Icon(Icons.logout),
-          ),
+          IconButton(onPressed: logOut, icon: const Icon(Icons.logout)),
         ],
       ),
 
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // MARK: - Search Bar
+      body: Consumer<MovieProvider>(
+        builder: (context, provider, child) {
+          final isSearching = searchController.text.trim().isNotEmpty;
 
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search animation movies...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
+          return Column(
+            children: [
+              // MARK: - Search Field
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: TextField(
+                  controller: searchController,
+                  onChanged: searchMovies,
+                  decoration: InputDecoration(
+                    hintText: 'Search animation movies...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: searchController.text.isNotEmpty
+                        ? IconButton(
+                            onPressed: () {
+                              searchController.clear();
+                              provider.clearSearchResults();
+                              setState(() {});
+                            },
+                            icon: const Icon(Icons.clear),
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
 
-          // MARK: - Movies
-
-          Expanded(
-            child: _buildMovies(movieProvider),
-          ),
-        ],
+              // MARK: - Content
+              Expanded(
+                child: isSearching
+                    ? _buildSearchResults(provider)
+                    : _buildMovies(provider),
+              ),
+            ],
+          );
+        },
       ),
 
       // MARK: - Bottom Navigation
-
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        destinations: const [
-          NavigationDestination(
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        items: const [
+          BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          NavigationDestination(
+          BottomNavigationBarItem(
             icon: Icon(Icons.favorite_border),
-            selectedIcon: Icon(Icons.favorite),
+            activeIcon: Icon(Icons.favorite),
             label: 'Favourites',
           ),
-          NavigationDestination(
+          BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+            activeIcon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
@@ -267,4 +278,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
