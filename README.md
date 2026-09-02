@@ -1,26 +1,24 @@
-# ToonBox 
+# ToonBox
 
 ToonBox is a Flutter movie application focused on animation movies.
-The app allows users to discover, search, view details, save favourites, and create a personal movie list.
+
+The app allows users to discover, search, view movie details, save favourites, create a personal movie list, and keep track of recently viewed movies.
 
 ## Features
 
 * Firebase Authentication
-
   * Register
   * Login
   * Logout
   * Authentication state check
 
 * Animation Movies
-
   * Popular Animation Movies
   * Top Rated Animation Movies
   * New / Now Playing Animation Movies
   * Search Animation Movies
 
 * Movie Details
-
   * Movie poster and backdrop
   * Rating
   * Release date
@@ -30,18 +28,19 @@ The app allows users to discover, search, view details, save favourites, and cre
   * Overview
 
 * Local Storage
-
   * Favourites
   * My List
+  * Recently Viewed
   * Data persistence using Hive
 
 * Other Features
-
   * Pull to refresh
   * Bottom navigation
   * Profile screen
+  * Recently Viewed movies
   * Native splash screen
   * Loading and error states
+  * Empty states
 
 ## Technologies
 
@@ -58,13 +57,6 @@ The app allows users to discover, search, view details, save favourites, and cre
 
 The project follows a simple layered architecture:
 
-```text
-UI
- ↓
-Controller
- ↓
-Service
-```
 
 ### UI
 
@@ -86,6 +78,7 @@ Responsible for communicating with external services such as Firebase, TMDB API,
 
 ```text
 lib/
+
 │
 ├── Controllers/
 │   ├── FirebaseAuthController.dart
@@ -106,6 +99,16 @@ lib/
 │
 └── Views/
     ├── Screens/
+    │   ├── SplashScreen.dart
+    │   ├── LogInScreen.dart
+    │   ├── RegisterScreen.dart
+    │   ├── HomeScreen.dart
+    │   ├── MovieDetailsScreen.dart
+    │   ├── FavoritesScreen.dart
+    │   ├── MyListScreen.dart
+    │   ├── RecentlyViewedScreen.dart
+    │   └── ProfileScreen.dart
+    │
     └── Widgets/
 ```
 
@@ -127,28 +130,40 @@ Hive is used to store:
 
 * Favourite movies
 * Movies in My List
+* Recently Viewed movies
 
-The application loads the saved movies when the Home screen starts.
+The application loads the saved local data when the Home screen starts.
+
+Recently Viewed keeps track of movies opened by the user and displays the recently viewed movies in the Profile section.
 
 ## Authentication
 
-Firebase Authentication is used for user registration, login, logout, and checking the current authentication state.
+Firebase Authentication is used for:
+
+* User registration
+* User login
+* User logout
+* Checking the current authentication state
+* Handling authentication errors
+
 
 ## How to Run
 
 1. Clone the repository.
+
 2. Open the project in VS Code or Android Studio.
+
 3. Run:
 
 ```bash
 flutter pub get
 ```
 
-4. Create a `.env` file and add the TMDB access token:
+4. Create a `.env` file in the project root and add the TMDB access token:
 
-```text
+
 TMDB_ACCESS_TOKEN=your_token
-```
+
 
 5. Run the application:
 
@@ -156,6 +171,15 @@ TMDB_ACCESS_TOKEN=your_token
 flutter run
 ```
 
+## Known Limitations
+
+* The application requires an internet connection to retrieve movie data from TMDB.
+* Movie availability depends on the data provided by TMDB.
+* Recently Viewed, Favourites, and My List are stored locally on the device using Hive.
+* The application currently focuses on animation movies.
+
 ## Author
 
 Mariam
+
+
