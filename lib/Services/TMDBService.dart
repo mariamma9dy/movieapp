@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:movieapp/Models/MovieModel.dart';
+import 'package:movieapp/Models/MovieDetailsModel.dart';
 
 class TMDBService {
   static const String _baseUrl = 'https://api.themoviedb.org/3';
@@ -59,6 +60,31 @@ class TMDBService {
     );
   }
 
+  // MARK: - Get Movie Details
+  Future<MovieDetailsModel> getMovieDetails(int movieId) async {
+    final accessToken = dotenv.env['TMDB_ACCESS_TOKEN'];
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('TMDB Access Token is missing');
+    }
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/movie/$movieId?language=en-US'),
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        'accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      return MovieDetailsModel.fromJson(data);
+    }
+
+    throw Exception('Failed to load movie details: ${response.statusCode}');
+  }
+
   // MARK: - Get Movies
   Future<MovieModel> _getMovies(
     String url, {
@@ -87,9 +113,7 @@ class TMDBService {
       // Animation Filter
       if (filterAnimation) {
         final animationMovies = movieModel.results
-            .where(
-              (movie) => movie.genreIds.contains(16),
-            )
+            .where((movie) => movie.genreIds.contains(16))
             .toList();
 
         return MovieModel(
@@ -103,9 +127,6 @@ class TMDBService {
       return movieModel;
     }
 
-    throw Exception(
-      'Failed to load movies: ${response.statusCode}',
-    );
+    throw Exception('Failed to load movies: ${response.statusCode}');
   }
 }
-

@@ -2,6 +2,7 @@ import 'package:movieapp/Models/MovieModel.dart';
 import 'package:movieapp/Providers/MovieProvider.dart';
 import 'package:movieapp/Services/HiveService.dart';
 import 'package:movieapp/Services/TMDBService.dart';
+import 'package:movieapp/Models/MovieDetailsModel.dart';
 
 class MovieController {
   final MovieProvider provider;
@@ -14,6 +15,11 @@ class MovieController {
     HiveService? hiveService,
   }) : _tmdbService = tmdbService ?? TMDBService(),
        _hiveService = hiveService ?? HiveService();
+
+  // MARK: - Get Movie Details
+  Future<MovieDetailsModel> getMovieDetails(int movieId) async {
+    return await _tmdbService.getMovieDetails(movieId);
+  }
 
   // MARK: - Get Home Movies
 
@@ -33,9 +39,7 @@ class MovieController {
       provider.setTopRatedMovies(results[1].results);
       provider.setNowPlayingMovies(results[2].results);
     } catch (error) {
-      provider.setError(
-        'Failed to load movies. Please try again.',
-      );
+      provider.setError('Failed to load movies. Please try again.');
     } finally {
       provider.setLoading(false);
     }
@@ -53,15 +57,11 @@ class MovieController {
     provider.setSearchError(null);
 
     try {
-      final result = await _tmdbService.searchAnimationMovies(
-        query.trim(),
-      );
+      final result = await _tmdbService.searchAnimationMovies(query.trim());
 
       provider.setSearchResults(result.results);
     } catch (error) {
-      provider.setSearchError(
-        'Failed to search movies. Please try again.',
-      );
+      provider.setSearchError('Failed to search movies. Please try again.');
     } finally {
       provider.setSearching(false);
     }
@@ -70,13 +70,9 @@ class MovieController {
   // MARK: - Load Local Data
 
   Future<void> loadLocalMovies() async {
-    provider.setFavorites(
-      _hiveService.getFavorites(),
-    );
+    provider.setFavorites(_hiveService.getFavorites());
 
-    provider.setMyList(
-      _hiveService.getMyList(),
-    );
+    provider.setMyList(_hiveService.getMyList());
   }
 
   // MARK: - Favorites

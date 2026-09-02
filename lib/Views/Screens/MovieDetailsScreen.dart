@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:movieapp/Models/MovieModel.dart';
+import 'package:movieapp/Models/MovieDetailsModel.dart';
 import 'package:movieapp/Providers/MovieProvider.dart';
 import 'package:movieapp/Controllers/MovieController.dart';
 
-class MovieDetailsScreen extends StatelessWidget {
+class MovieDetailsScreen extends StatefulWidget {
   final Movie movie;
 
   const MovieDetailsScreen({
@@ -14,12 +15,70 @@ class MovieDetailsScreen extends StatelessWidget {
   });
 
   @override
+  State<MovieDetailsScreen> createState() => _MovieDetailsScreenState();
+}
+
+class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
+  late MovieController movieController;
+
+  MovieDetailsModel? movieDetails;
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final provider = Provider.of<MovieProvider>(
+      context,
+      listen: false,
+    );
+
+    movieController = MovieController(
+      provider: provider,
+    );
+
+    loadMovieDetails();
+  }
+  //MARK:- Load Movie Details
+  Future<void> loadMovieDetails() async {
+    try {
+      final result = await movieController.getMovieDetails(
+        widget.movie.id,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        movieDetails = result;
+        isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = 'Failed to load movie details.';
+        isLoading = false;
+      });
+    }
+  }
+  //MARK:- Format Runtime
+  String _formatRuntime(int minutes) {
+    final hours = minutes ~/ 60;
+    final remainingMinutes = minutes % 60;
+
+    if (hours == 0) {
+      return '${remainingMinutes}m';
+    }
+
+    return '${hours}h ${remainingMinutes}m';
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // MARK: - Movie Header
-
           SliverAppBar(
             expandedHeight: 430,
             pinned: true,
@@ -34,7 +93,7 @@ class MovieDetailsScreen extends StatelessWidget {
                 bottom: 16,
               ),
               title: Text(
-                movie.title,
+                widget.movie.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -48,29 +107,31 @@ class MovieDetailsScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              //MARK:- Background
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (movie.backdropPath != null)
+                  // backdrop
+                  if (widget.movie.backdropPath != null)
                     Image.network(
-                      'https://image.tmdb.org/t/p/w780${movie.backdropPath}',
+                      'https://image.tmdb.org/t/p/w780${widget.movie.backdropPath}',
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) {
                         return _buildPlaceholder();
                       },
                     )
-                  else if (movie.posterPath != null)
+                  // no backdrop => poster
+                  else if (widget.movie.posterPath != null)
                     Image.network(
-                      'https://image.tmdb.org/t/p/w500${movie.posterPath}',
+                      'https://image.tmdb.org/t/p/w500${widget.movie.posterPath}',
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) {
                         return _buildPlaceholder();
                       },
                     )
+                  // no poster
                   else
                     _buildPlaceholder(),
-
-                  // MARK: - Dark Gradient
 
                   Container(
                     decoration: BoxDecoration(
@@ -95,46 +156,96 @@ class MovieDetailsScreen extends StatelessWidget {
             ),
           ),
 
-          // MARK: - Movie Content
-
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 22, 20, 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // MARK: - Rating, Release Date and Language
 
+                  //MARK:- Rating, ReleaseDate, Language
                   Row(
                     children: [
                       _buildInfoItem(
                         icon: Icons.star,
                         iconColor: Colors.amber,
-                        text: movie.voteAverage.toStringAsFixed(1),
+                        text: widget.movie.voteAverage
+                            .toStringAsFixed(1),
                       ),
-
                       const SizedBox(width: 22),
 
                       _buildInfoItem(
                         icon: Icons.calendar_today_outlined,
-                        text: movie.releaseDate.isEmpty
+                        text: widget.movie.releaseDate.isEmpty
                             ? 'Unknown'
-                            : movie.releaseDate,
+                            : widget.movie.releaseDate,
                       ),
 
                       const Spacer(),
 
                       _buildInfoItem(
                         icon: Icons.language,
-                        text: movie.originalLanguage.toUpperCase(),
+                        text: widget.movie.originalLanguage
+                            .toUpperCase(),
                       ),
                     ],
                   ),
 
+                  const SizedBox(height: 20),
+
+                  //MARK:- Runtime and Genres
+                  if (isLoading)
+                    const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  else if (errorMessage != null)
+                    Text(
+                      errorMessage!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                      ),
+                    )
+                  else if (movieDetails != null) ...[
+                    // Runtime
+                    if (movieDetails!.runtime > 0)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.access_time,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _formatRuntime(
+                              movieDetails!.runtime,
+                            ),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                    // Genres
+                    if (movieDetails!.genres.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: movieDetails!.genres.map((genre) {
+                          return Chip(
+                            label: Text(genre),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ],
+
                   const SizedBox(height: 30),
 
-                  // MARK: - Overview
-
+                  //MARK:- Overview
                   const Text(
                     'Overview',
                     style: TextStyle(
@@ -146,9 +257,9 @@ class MovieDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   Text(
-                    movie.overview.isEmpty
+                    widget.movie.overview.isEmpty
                         ? 'No overview available for this movie.'
-                        : movie.overview,
+                        : widget.movie.overview,
                     style: TextStyle(
                       fontSize: 15,
                       height: 1.7,
@@ -158,11 +269,11 @@ class MovieDetailsScreen extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  // MARK: - Favourite Button
-
+                  //MARK:- Favourite Button
                   Consumer<MovieProvider>(
                     builder: (context, provider, child) {
-                      final isFavorite = provider.isFavorite(movie.id);
+                      final isFavorite =
+                          provider.isFavorite(widget.movie.id);
 
                       return SizedBox(
                         width: double.infinity,
@@ -173,7 +284,9 @@ class MovieDetailsScreen extends StatelessWidget {
                               provider: provider,
                             );
 
-                            await controller.toggleFavorite(movie);
+                            await controller.toggleFavorite(
+                              widget.movie,
+                            );
                           },
                           icon: Icon(
                             isFavorite
@@ -196,11 +309,11 @@ class MovieDetailsScreen extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // MARK: - My List Button
-
+                  //MARK:- My List Button
                   Consumer<MovieProvider>(
                     builder: (context, provider, child) {
-                      final isInMyList = provider.isInMyList(movie.id);
+                      final isInMyList =
+                          provider.isInMyList(widget.movie.id);
 
                       return SizedBox(
                         width: double.infinity,
@@ -211,7 +324,9 @@ class MovieDetailsScreen extends StatelessWidget {
                               provider: provider,
                             );
 
-                            await controller.toggleMyList(movie);
+                            await controller.toggleMyList(
+                              widget.movie,
+                            );
                           },
                           icon: Icon(
                             isInMyList
@@ -239,9 +354,7 @@ class MovieDetailsScreen extends StatelessWidget {
       ),
     );
   }
-
-  // MARK: - Info Item
-
+  //MARK:- InfoItem
   Widget _buildInfoItem({
     required IconData icon,
     required String text,
@@ -266,9 +379,7 @@ class MovieDetailsScreen extends StatelessWidget {
       ],
     );
   }
-
-  // MARK: - Placeholder
-
+  //MARK:- Placeholder
   Widget _buildPlaceholder() {
     return Container(
       color: Colors.grey.shade900,

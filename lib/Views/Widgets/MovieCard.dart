@@ -43,6 +43,7 @@ class MovieCard extends StatelessWidget {
                     Image.network(
                       'https://image.tmdb.org/t/p/w500${movie.posterPath}',
                       fit: BoxFit.cover,
+                      // Image fails
                       errorBuilder: (_, __, ___) {
                         return const Center(
                           child: Icon(
@@ -55,7 +56,7 @@ class MovieCard extends StatelessWidget {
                   else
                     const Center(
                       child: Icon(
-                        Icons.movie_outlined,
+                        Icons.movie_outlined, // No poster
                         size: 40,
                       ),
                     ),
