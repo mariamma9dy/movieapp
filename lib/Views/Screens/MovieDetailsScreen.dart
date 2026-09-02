@@ -136,11 +136,11 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
                         colors: [
-                          Colors.black.withValues(alpha: 0.1),
-                          Colors.black.withValues(alpha: 0.35),
+                          Colors.black.withValues(alpha: 0.05),
+                          Colors.black.withValues(alpha: 0.3),
                           Colors.black,
                         ],
                         stops: const [

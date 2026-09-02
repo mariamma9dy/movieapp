@@ -35,12 +35,12 @@ flutter:
     - .env
 
 flutter_native_splash:
-  color: "#121212"
+  color: "#07131F"
   image: assets/images/p.jpeg
   android: true
   ios: true
   web: true
 
   android_12:
-    color: "#121212"
+    color: "#07131F"
     image: assets/images/p.jpeg

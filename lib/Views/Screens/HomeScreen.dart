@@ -29,21 +29,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final movieProvider = Provider.of<MovieProvider>(
-      context,
-      listen: false,
-    );
+    final movieProvider = Provider.of<MovieProvider>(context, listen: false);
 
-    movieController = MovieController(
-      provider: movieProvider,
-    );
+    movieController = MovieController(provider: movieProvider);
 
     if (!_moviesLoaded) {
       _moviesLoaded = true;
 
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await movieController.loadLocalMovies(); // Hive
-        await movieController.getMovies();  // TMDB
+        await movieController.getMovies(); // TMDB
       });
     }
   }
@@ -69,26 +64,20 @@ class _HomeScreenState extends State<HomeScreen> {
   // MARK: - Home Movies
 
   Widget _buildMovies(MovieProvider provider) {
-
     // Loading
 
     if (provider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),    
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     //MARK:- Retry
 
-    if (provider.errorMessage != null) { 
+    if (provider.errorMessage != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              provider.errorMessage!,          
-              textAlign: TextAlign.center,
-            ),
+            Text(provider.errorMessage!, textAlign: TextAlign.center),
 
             const SizedBox(height: 12),
 
@@ -100,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-    
+
     return RefreshIndicator(
       onRefresh: movieController.getMovies,
       //MARK:- Movie Section
@@ -168,12 +157,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'My List'; // 2
   }
 
-  void openProfile() {       // Profile
+  void openProfile() {
+    // Profile
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const ProfileScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const ProfileScreen()),
     );
   }
 
@@ -191,16 +179,19 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(appBarTitle),
         actions: [
-          IconButton(
-            onPressed: openProfile,
-            icon: const Icon(Icons.person_outline),
+          Tooltip(
+            message: 'Profile',
+            child: IconButton(
+              onPressed: openProfile,
+              icon: const Icon(Icons.person_outline),
+            ),
           ),
         ],
       ),
 
-      // provider(notifyListeners) => rebuild ui 
-      
-      body: Consumer<MovieProvider>( // from main
+      // provider(notifyListeners) => rebuild ui
+      body: Consumer<MovieProvider>(
+        // from main
         builder: (context, provider, child) {
           if (_currentIndex == 0) {
             return _buildHomeBody(provider);
@@ -220,20 +211,29 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: changeTab,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            icon: Tooltip(message: 'Home', child: Icon(Icons.home_outlined)),
+            activeIcon: Tooltip(message: 'Home', child: Icon(Icons.home)),
             label: 'Home',
           ),
 
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border),
-            activeIcon: Icon(Icons.favorite),
+            icon: Tooltip(
+              message: 'Favourites',
+              child: Icon(Icons.favorite_border),
+            ),
+            activeIcon: Tooltip(
+              message: 'Favourites',
+              child: Icon(Icons.favorite),
+            ),
             label: 'Favourites',
           ),
 
           BottomNavigationBarItem(
-            icon: Icon(Icons.playlist_play),
-            activeIcon: Icon(Icons.playlist_play),
+            icon: Tooltip(message: 'My List', child: Icon(Icons.playlist_play)),
+            activeIcon: Tooltip(
+              message: 'My List',
+              child: Icon(Icons.playlist_play),
+            ),
             label: 'My List',
           ),
         ],

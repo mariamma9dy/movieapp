@@ -41,7 +41,25 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
+      //theme: ThemeData.dark(),
+      //MARK:- Theme
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF07131F),
+
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF00D4FF),
+          secondary: Color(0xFF4D7CFE),
+          surface: Color(0xFF102235),
+        ),
+
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0A1724),
+          foregroundColor: Colors.white,
+        ),
+
+        cardTheme: const CardThemeData(color: Color(0xFF102235)),
+      ),
       home: const SplashScreen(),
     );
   }
