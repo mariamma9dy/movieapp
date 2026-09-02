@@ -1,16 +1,22 @@
+import 'package:movieapp/Models/MovieModel.dart';
 import 'package:movieapp/Providers/MovieProvider.dart';
+import 'package:movieapp/Services/HiveService.dart';
 import 'package:movieapp/Services/TMDBService.dart';
 
 class MovieController {
   final MovieProvider provider;
   final TMDBService _tmdbService;
+  final HiveService _hiveService;
 
   MovieController({
     required this.provider,
     TMDBService? tmdbService,
-  }) : _tmdbService = tmdbService ?? TMDBService();
+    HiveService? hiveService,
+  }) : _tmdbService = tmdbService ?? TMDBService(),
+       _hiveService = hiveService ?? HiveService();
 
   // MARK: - Get Home Movies
+
   Future<void> getMovies() async {
     provider.setLoading(true);
     provider.setError(null);
@@ -35,6 +41,7 @@ class MovieController {
   }
 
   // MARK: - Search Movies
+
   Future<void> searchMovies(String query) async {
     if (query.trim().isEmpty) {
       provider.clearSearchResults();
@@ -58,5 +65,40 @@ class MovieController {
       provider.setSearching(false);
     }
   }
-}
 
+  // MARK: - Load Local Data
+
+  Future<void> loadLocalMovies() async {
+    provider.setFavorites(
+      _hiveService.getFavorites(),
+    );
+
+    provider.setMyList(
+      _hiveService.getMyList(),
+    );
+  }
+
+  // MARK: - Favorites
+
+  Future<void> toggleFavorite(Movie movie) async {
+    if (provider.isFavorite(movie.id)) {
+      await _hiveService.removeFromFavorites(movie.id);
+      provider.removeFavorite(movie.id);
+    } else {
+      await _hiveService.addToFavorites(movie);
+      provider.addFavorite(movie);
+    }
+  }
+
+  // MARK: - My List
+
+  Future<void> toggleMyList(Movie movie) async {
+    if (provider.isInMyList(movie.id)) {
+      await _hiveService.removeFromMyList(movie.id);
+      provider.removeMovieFromList(movie.id);
+    } else {
+      await _hiveService.addToMyList(movie);
+      provider.addMovieToList(movie);
+    }
+  }
+}

@@ -16,6 +16,9 @@ dependencies:
   provider: ^6.1.5+1
   http: ^1.6.0
   flutter_dotenv: ^6.0.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  flutter_native_splash: ^2.4.8
 
   cupertino_icons: ^1.0.8
 
@@ -30,3 +33,9 @@ flutter:
 
   assets:
     - .env
+
+flutter_native_splash:
+  color: "#121212"
+  android: true
+  ios: true
+  web: true

@@ -11,6 +11,7 @@ class MovieModel {
     required this.totalResults,
   });
 
+  //MARK:- Model from json
   factory MovieModel.fromJson(Map<String, dynamic> json) {
     return MovieModel(
       page: json['page'] ?? 1,
@@ -55,7 +56,7 @@ class Movie {
     required this.voteAverage,
     required this.voteCount,
   });
-
+  //MARK:- Movie from json
   factory Movie.fromJson(Map<String, dynamic> json) {
     return Movie(
       adult: json['adult'] ?? false,
@@ -72,6 +73,47 @@ class Movie {
       video: json['video'] ?? false,
       voteAverage: (json['vote_average'] ?? 0).toDouble(),
       voteCount: json['vote_count'] ?? 0,
+    );
+  }
+
+  // MARK: - Hive
+
+  // Movie => Save Map to Hive
+  Map<String, dynamic> toMap() { // stor
+    return {
+      'adult': adult,
+      'backdropPath': backdropPath,
+      'genreIds': genreIds,
+      'id': id,
+      'title': title,
+      'originalLanguage': originalLanguage,
+      'originalTitle': originalTitle,
+      'overview': overview,
+      'popularity': popularity,
+      'posterPath': posterPath,
+      'releaseDate': releaseDate,
+      'video': video,
+      'voteAverage': voteAverage,
+      'voteCount': voteCount,
+    };
+  }
+  // Map from Hive => Movie
+  factory Movie.fromMap(Map<String, dynamic> map) { // read
+    return Movie(
+      adult: map['adult'] ?? false,
+      backdropPath: map['backdropPath'],
+      genreIds: List<int>.from(map['genreIds'] ?? []),
+      id: map['id'] ?? 0,
+      title: map['title'] ?? '',
+      originalLanguage: map['originalLanguage'] ?? '',
+      originalTitle: map['originalTitle'] ?? '',
+      overview: map['overview'] ?? '',
+      popularity: (map['popularity'] ?? 0).toDouble(),
+      posterPath: map['posterPath'],
+      releaseDate: map['releaseDate'] ?? '',
+      video: map['video'] ?? false,
+      voteAverage: (map['voteAverage'] ?? 0).toDouble(),
+      voteCount: map['voteCount'] ?? 0,
     );
   }
 }

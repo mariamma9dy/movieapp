@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:movieapp/Models/MovieModel.dart';
 import 'package:movieapp/Views/Screens/MovieDetailsScreen.dart';
+import 'package:movieapp/Providers/MovieProvider.dart';
+import 'package:movieapp/Controllers/MovieController.dart';
 
 class MovieCard extends StatelessWidget {
   final Movie movie;
@@ -62,22 +65,37 @@ class MovieCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.75),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          // SQFLite will be connected later.
-                        },
-                        icon: const Icon(
-                          Icons.favorite_border,
-                          size: 16,
-                        ),
-                        padding: const EdgeInsets.all(7),
-                        constraints: const BoxConstraints(),
-                      ),
+                    child: Consumer<MovieProvider>(
+                      builder: (context, provider, child) {
+                        final isFavorite = provider.isFavorite(movie.id);
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.75),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            onPressed: () async {
+                              final controller = MovieController(
+                                provider: provider,
+                              );
+
+                              await controller.toggleFavorite(movie);
+                            },
+                            icon: Icon(
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              size: 16,
+                              color: isFavorite
+                                  ? Colors.red
+                                  : Colors.white,
+                            ),
+                            padding: const EdgeInsets.all(7),
+                            constraints: const BoxConstraints(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -143,4 +161,3 @@ class MovieCard extends StatelessWidget {
     );
   }
 }
-

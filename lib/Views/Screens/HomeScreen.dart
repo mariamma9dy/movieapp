@@ -5,7 +5,9 @@ import 'package:movieapp/Controllers/FirebaseAuthController.dart';
 import 'package:movieapp/Controllers/MovieController.dart';
 import 'package:movieapp/Providers/FirebaseAuthProvider.dart';
 import 'package:movieapp/Providers/MovieProvider.dart';
+import 'package:movieapp/Views/Screens/FavoritesScreen.dart';
 import 'package:movieapp/Views/Screens/LogInScreen.dart';
+import 'package:movieapp/Views/Screens/MyListScreen.dart';
 import 'package:movieapp/Views/Widgets/MovieCard.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -22,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController searchController = TextEditingController();
 
   bool _moviesLoaded = false;
+  int _currentIndex = 0;
 
   @override
   void didChangeDependencies() {
@@ -41,8 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!_moviesLoaded) {
       _moviesLoaded = true;
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        movieController.getMovies();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await movieController.loadLocalMovies();
+        await movieController.getMovies();
       });
     }
   }
@@ -54,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // MARK: - Logout
+
   Future<void> logOut() async {
     final success = await authController.logOut();
 
@@ -69,11 +74,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // MARK: - Search
+
   void searchMovies(String value) {
     movieController.searchMovies(value);
   }
 
   // MARK: - Movie Section
+
   Widget _buildMovieSection({required String title, required List movies}) {
     if (movies.isEmpty) {
       return const SizedBox.shrink();
@@ -116,6 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // MARK: - Search Results
+
   Widget _buildSearchResults(MovieProvider provider) {
     if (provider.isSearching) {
       return const Center(child: CircularProgressIndicator());
@@ -152,6 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // MARK: - Home Movies
+
   Widget _buildMovies(MovieProvider provider) {
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -201,11 +210,58 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // MARK: - Home Body
+
+  Widget _buildHomeBody(MovieProvider provider) {
+    return Column(
+      children: [
+        // Search Field
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: TextField(
+            controller: searchController,
+            onChanged: searchMovies,
+            decoration: InputDecoration(
+              hintText: 'Search animation movies...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: searchController.text.isNotEmpty
+                  ? IconButton(
+                      onPressed: () {
+                        searchController.clear();
+                        provider.clearSearchResults();
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.clear),
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+
+        // Content
+        Expanded(
+          child: searchController.text.trim().isNotEmpty
+              ? _buildSearchResults(provider)
+              : _buildMovies(provider),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ToonBox'),
+        title: Text(
+          _currentIndex == 0
+              ? 'ToonBox'
+              : _currentIndex == 1
+              ? 'Favourites'
+              : 'My List',
+        ),
         actions: [
           IconButton(onPressed: logOut, icon: const Icon(Icons.logout)),
         ],
@@ -213,50 +269,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
       body: Consumer<MovieProvider>(
         builder: (context, provider, child) {
-          final isSearching = searchController.text.trim().isNotEmpty;
+          if (_currentIndex == 0) {
+            return _buildHomeBody(provider);
+          }
 
-          return Column(
-            children: [
-              // MARK: - Search Field
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: TextField(
-                  controller: searchController,
-                  onChanged: searchMovies,
-                  decoration: InputDecoration(
-                    hintText: 'Search animation movies...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: searchController.text.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              searchController.clear();
-                              provider.clearSearchResults();
-                              setState(() {});
-                            },
-                            icon: const Icon(Icons.clear),
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
+          if (_currentIndex == 1) {
+            return const FavoritesScreen();
+          }
 
-              // MARK: - Content
-              Expanded(
-                child: isSearching
-                    ? _buildSearchResults(provider)
-                    : _buildMovies(provider),
-              ),
-            ],
-          );
+          return const MyListScreen();
         },
       ),
 
       // MARK: - Bottom Navigation
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -269,9 +301,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Favourites',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
+            icon: Icon(Icons.playlist_play),
+            activeIcon: Icon(Icons.playlist_play),
+            label: 'My List',
           ),
         ],
       ),

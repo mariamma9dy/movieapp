@@ -40,8 +40,8 @@ class TMDBService {
     return _getMovies(
       '$_baseUrl/movie/now_playing'
       '?language=en-US'
-      '&page=1',
-      filterAnimation: true,
+      '&page=1', // all
+      filterAnimation: true, // then filter
     );
   }
 
@@ -69,7 +69,7 @@ class TMDBService {
     if (accessToken == null || accessToken.isEmpty) {
       throw Exception('TMDB Access Token is missing');
     }
-
+    // request
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -77,12 +77,14 @@ class TMDBService {
         'accept': 'application/json',
       },
     );
-
+    // if accepted
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
 
+      // from map to model
       final movieModel = MovieModel.fromJson(data);
 
+      // Animation Filter
       if (filterAnimation) {
         final animationMovies = movieModel.results
             .where(

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'package:movieapp/Models/MovieModel.dart';
+import 'package:movieapp/Providers/MovieProvider.dart';
+import 'package:movieapp/Controllers/MovieController.dart';
 
 class MovieDetailsScreen extends StatelessWidget {
   final Movie movie;
@@ -15,6 +19,7 @@ class MovieDetailsScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           // MARK: - Movie Header
+
           SliverAppBar(
             expandedHeight: 430,
             pinned: true,
@@ -46,7 +51,6 @@ class MovieDetailsScreen extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // MARK: - Backdrop Image
                   if (movie.backdropPath != null)
                     Image.network(
                       'https://image.tmdb.org/t/p/w780${movie.backdropPath}',
@@ -67,6 +71,7 @@ class MovieDetailsScreen extends StatelessWidget {
                     _buildPlaceholder(),
 
                   // MARK: - Dark Gradient
+
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -91,6 +96,7 @@ class MovieDetailsScreen extends StatelessWidget {
           ),
 
           // MARK: - Movie Content
+
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 22, 20, 30),
@@ -98,6 +104,7 @@ class MovieDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // MARK: - Rating, Release Date and Language
+
                   Row(
                     children: [
                       _buildInfoItem(
@@ -127,6 +134,7 @@ class MovieDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 30),
 
                   // MARK: - Overview
+
                   const Text(
                     'Overview',
                     style: TextStyle(
@@ -150,48 +158,78 @@ class MovieDetailsScreen extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  // MARK: - Add to Favourites
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // SQFLite will be connected later.
-                      },
-                      icon: const Icon(
-                        Icons.favorite_border,
-                      ),
-                      label: const Text(
-                        'Add to Favourites',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                  // MARK: - Favourite Button
+
+                  Consumer<MovieProvider>(
+                    builder: (context, provider, child) {
+                      final isFavorite = provider.isFavorite(movie.id);
+
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final controller = MovieController(
+                              provider: provider,
+                            );
+
+                            await controller.toggleFavorite(movie);
+                          },
+                          icon: Icon(
+                            isFavorite
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                          ),
+                          label: Text(
+                            isFavorite
+                                ? 'Remove from Favourites'
+                                : 'Add to Favourites',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 12),
 
-                  // MARK: - Add to My List
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        // Movie lists will be connected later.
-                      },
-                      icon: const Icon(
-                        Icons.playlist_add,
-                      ),
-                      label: const Text(
-                        'Add to My List',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                  // MARK: - My List Button
+
+                  Consumer<MovieProvider>(
+                    builder: (context, provider, child) {
+                      final isInMyList = provider.isInMyList(movie.id);
+
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final controller = MovieController(
+                              provider: provider,
+                            );
+
+                            await controller.toggleMyList(movie);
+                          },
+                          icon: Icon(
+                            isInMyList
+                                ? Icons.playlist_add_check
+                                : Icons.playlist_add,
+                          ),
+                          label: Text(
+                            isInMyList
+                                ? 'Remove from My List'
+                                : 'Add to My List',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -203,6 +241,7 @@ class MovieDetailsScreen extends StatelessWidget {
   }
 
   // MARK: - Info Item
+
   Widget _buildInfoItem({
     required IconData icon,
     required String text,
@@ -229,6 +268,7 @@ class MovieDetailsScreen extends StatelessWidget {
   }
 
   // MARK: - Placeholder
+
   Widget _buildPlaceholder() {
     return Container(
       color: Colors.grey.shade900,
@@ -242,4 +282,3 @@ class MovieDetailsScreen extends StatelessWidget {
     );
   }
 }
-
