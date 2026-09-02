@@ -5,11 +5,16 @@ import 'package:movieapp/Providers/MovieProvider.dart';
 import 'package:movieapp/Views/Widgets/MovieCard.dart';
 
 class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({super.key});
+  final bool showAppBar;
+
+  const FavoritesScreen({
+    super.key,
+    this.showAppBar = true,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MovieProvider>(
+    final content = Consumer<MovieProvider>(
       builder: (context, provider, child) {
         if (provider.favorites.isEmpty) {
           return const Center(
@@ -36,6 +41,17 @@ class FavoritesScreen extends StatelessWidget {
           },
         );
       },
+    );
+
+    if (!showAppBar) {
+      return content;
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Favourites'),
+      ),
+      body: content,
     );
   }
 }

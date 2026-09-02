@@ -22,6 +22,7 @@ void main() async {
 
   await Hive.openBox('favorites');
   await Hive.openBox('myList');
+  await Hive.openBox('recentlyViewed');
 
   runApp(
     MultiProvider(

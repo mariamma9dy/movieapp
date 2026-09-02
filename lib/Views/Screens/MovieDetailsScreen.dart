@@ -9,10 +9,7 @@ import 'package:movieapp/Controllers/MovieController.dart';
 class MovieDetailsScreen extends StatefulWidget {
   final Movie movie;
 
-  const MovieDetailsScreen({
-    super.key,
-    required this.movie,
-  });
+  const MovieDetailsScreen({super.key, required this.movie});
 
   @override
   State<MovieDetailsScreen> createState() => _MovieDetailsScreenState();
@@ -29,23 +26,18 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   void initState() {
     super.initState();
 
-    final provider = Provider.of<MovieProvider>(
-      context,
-      listen: false,
-    );
+    final provider = Provider.of<MovieProvider>(context, listen: false);
 
-    movieController = MovieController(
-      provider: provider,
-    );
+    movieController = MovieController(provider: provider);
 
     loadMovieDetails();
+    addToRecentlyViewed();
   }
+
   //MARK:- Load Movie Details
   Future<void> loadMovieDetails() async {
     try {
-      final result = await movieController.getMovieDetails(
-        widget.movie.id,
-      );
+      final result = await movieController.getMovieDetails(widget.movie.id);
 
       if (!mounted) return;
 
@@ -62,6 +54,11 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       });
     }
   }
+  //MARK:- Add to Recently Viewed
+  Future<void> addToRecentlyViewed() async {
+    await movieController.addToRecentlyViewed(widget.movie);
+  }
+
   //MARK:- Format Runtime
   String _formatRuntime(int minutes) {
     final hours = minutes ~/ 60;
@@ -83,9 +80,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
             expandedHeight: 430,
             pinned: true,
             backgroundColor: Colors.black,
-            iconTheme: const IconThemeData(
-              color: Colors.white,
-            ),
+            iconTheme: const IconThemeData(color: Colors.white),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(
                 left: 20,
@@ -99,12 +94,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 8,
-                      color: Colors.black,
-                    ),
-                  ],
+                  shadows: [Shadow(blurRadius: 8, color: Colors.black)],
                 ),
               ),
               //MARK:- Background
@@ -143,11 +133,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                           Colors.black.withValues(alpha: 0.3),
                           Colors.black,
                         ],
-                        stops: const [
-                          0.0,
-                          0.55,
-                          1.0,
-                        ],
+                        stops: const [0.0, 0.55, 1.0],
                       ),
                     ),
                   ),
@@ -162,15 +148,13 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   //MARK:- Rating, ReleaseDate, Language
                   Row(
                     children: [
                       _buildInfoItem(
                         icon: Icons.star,
                         iconColor: Colors.amber,
-                        text: widget.movie.voteAverage
-                            .toStringAsFixed(1),
+                        text: widget.movie.voteAverage.toStringAsFixed(1),
                       ),
                       const SizedBox(width: 22),
 
@@ -185,8 +169,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
 
                       _buildInfoItem(
                         icon: Icons.language,
-                        text: widget.movie.originalLanguage
-                            .toUpperCase(),
+                        text: widget.movie.originalLanguage.toUpperCase(),
                       ),
                     ],
                   ),
@@ -195,30 +178,21 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
 
                   //MARK:- Runtime and Genres
                   if (isLoading)
-                    const Center(
-                      child: CircularProgressIndicator(),
-                    )
+                    const Center(child: CircularProgressIndicator())
                   else if (errorMessage != null)
                     Text(
                       errorMessage!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                      ),
+                      style: const TextStyle(color: Colors.red),
                     )
                   else if (movieDetails != null) ...[
                     // Runtime
                     if (movieDetails!.runtime > 0)
                       Row(
                         children: [
-                          const Icon(
-                            Icons.access_time,
-                            size: 20,
-                          ),
+                          const Icon(Icons.access_time, size: 20),
                           const SizedBox(width: 6),
                           Text(
-                            _formatRuntime(
-                              movieDetails!.runtime,
-                            ),
+                            _formatRuntime(movieDetails!.runtime),
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -235,9 +209,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         children: movieDetails!.genres.map((genre) {
-                          return Chip(
-                            label: Text(genre),
-                          );
+                          return Chip(label: Text(genre));
                         }).toList(),
                       ),
                     ],
@@ -248,10 +220,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   //MARK:- Overview
                   const Text(
                     'Overview',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
 
                   const SizedBox(height: 10),
@@ -272,8 +241,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   //MARK:- Favourite Button
                   Consumer<MovieProvider>(
                     builder: (context, provider, child) {
-                      final isFavorite =
-                          provider.isFavorite(widget.movie.id);
+                      final isFavorite = provider.isFavorite(widget.movie.id);
 
                       return SizedBox(
                         width: double.infinity,
@@ -284,14 +252,10 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                               provider: provider,
                             );
 
-                            await controller.toggleFavorite(
-                              widget.movie,
-                            );
+                            await controller.toggleFavorite(widget.movie);
                           },
                           icon: Icon(
-                            isFavorite
-                                ? Icons.favorite
-                                : Icons.favorite_border,
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
                           ),
                           label: Text(
                             isFavorite
@@ -312,8 +276,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   //MARK:- My List Button
                   Consumer<MovieProvider>(
                     builder: (context, provider, child) {
-                      final isInMyList =
-                          provider.isInMyList(widget.movie.id);
+                      final isInMyList = provider.isInMyList(widget.movie.id);
 
                       return SizedBox(
                         width: double.infinity,
@@ -324,9 +287,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                               provider: provider,
                             );
 
-                            await controller.toggleMyList(
-                              widget.movie,
-                            );
+                            await controller.toggleMyList(widget.movie);
                           },
                           icon: Icon(
                             isInMyList
@@ -354,6 +315,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       ),
     );
   }
+
   //MARK:- InfoItem
   Widget _buildInfoItem({
     required IconData icon,
@@ -363,32 +325,22 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: iconColor,
-        ),
+        Icon(icon, size: 20, color: iconColor),
         const SizedBox(width: 6),
         Text(
           text,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ],
     );
   }
+
   //MARK:- Placeholder
   Widget _buildPlaceholder() {
     return Container(
       color: Colors.grey.shade900,
       child: const Center(
-        child: Icon(
-          Icons.movie_outlined,
-          size: 70,
-          color: Colors.white54,
-        ),
+        child: Icon(Icons.movie_outlined, size: 70, color: Colors.white54),
       ),
     );
   }

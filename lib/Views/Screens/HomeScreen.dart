@@ -198,10 +198,10 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           if (_currentIndex == 1) {
-            return const FavoritesScreen();
+            return const FavoritesScreen(showAppBar: false);
           }
 
-          return const MyListScreen();
+          return const MyListScreen(showAppBar: false);
         },
       ),
 

@@ -73,6 +73,8 @@ class MovieController {
     provider.setFavorites(_hiveService.getFavorites());
 
     provider.setMyList(_hiveService.getMyList());
+
+    provider.setRecentlyViewed(_hiveService.getRecentlyViewed());
   }
 
   // MARK: - Favorites
@@ -97,5 +99,12 @@ class MovieController {
       await _hiveService.addToMyList(movie);
       provider.addMovieToList(movie);
     }
+  }
+
+  // MARK: - Recently Viewed
+
+  Future<void> addToRecentlyViewed(Movie movie) async {
+    await _hiveService.addToRecentlyViewed(movie);
+    provider.addRecentlyViewed(movie);
   }
 }

@@ -9,6 +9,7 @@ class MovieProvider extends ChangeNotifier {
 
   List<Movie> _favorites = [];
   List<Movie> _myList = [];
+  List<Movie> _recentlyViewed = [];
 
   bool _isLoading = false;
   bool _isSearching = false;
@@ -29,6 +30,8 @@ class MovieProvider extends ChangeNotifier {
   List<Movie> get favorites => _favorites;
 
   List<Movie> get myList => _myList;
+
+  List<Movie> get recentlyViewed => _recentlyViewed;
 
   bool get isLoading => _isLoading;
 
@@ -84,16 +87,12 @@ class MovieProvider extends ChangeNotifier {
   }
 
   void removeFavorite(int movieId) {
-    _favorites.removeWhere(
-      (movie) => movie.id == movieId,
-    );
+    _favorites.removeWhere((movie) => movie.id == movieId);
     notifyListeners();
   }
 
   bool isFavorite(int movieId) {
-    return _favorites.any(
-      (movie) => movie.id == movieId,
-    );
+    return _favorites.any((movie) => movie.id == movieId);
   }
 
   // MARK: - My List
@@ -111,16 +110,38 @@ class MovieProvider extends ChangeNotifier {
   }
 
   void removeMovieFromList(int movieId) {
-    _myList.removeWhere(
-      (movie) => movie.id == movieId,
-    );
+    _myList.removeWhere((movie) => movie.id == movieId);
     notifyListeners();
   }
 
   bool isInMyList(int movieId) {
-    return _myList.any(
-      (movie) => movie.id == movieId,
-    );
+    return _myList.any((movie) => movie.id == movieId);
+  }
+
+  // MARK: - Recently Viewed
+
+  void setRecentlyViewed(List<Movie> movies) {
+    _recentlyViewed = movies;
+    notifyListeners();
+  }
+
+  void addRecentlyViewed(Movie movie) {
+    _recentlyViewed.removeWhere((item) => item.id == movie.id);
+
+    _recentlyViewed.insert(0, movie);
+
+    notifyListeners();
+  }
+
+  void removeRecentlyViewed(int movieId) {
+    _recentlyViewed.removeWhere((movie) => movie.id == movieId);
+
+    notifyListeners();
+  }
+
+  void clearRecentlyViewed() {
+    _recentlyViewed.clear();
+    notifyListeners();
   }
 
   // MARK: - Loading

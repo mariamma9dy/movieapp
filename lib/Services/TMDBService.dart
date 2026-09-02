@@ -46,6 +46,20 @@ class TMDBService {
     );
   }
 
+  // // MARK: - Get New Animation Movies
+  // Future<MovieModel> getNewAnimationMovies() async {
+  //   return _getMovies(
+  //     '$_baseUrl/discover/movie'
+  //     '?include_adult=false'
+  //     '&include_video=false'
+  //     '&language=en-US'
+  //     '&page=1'
+  //     '&sort_by=release_date.desc'
+  //     '&with_genres=16'
+  //     '&with_release_type=2|3',
+  //   );
+  // }
+
   // MARK: - Search Animation Movies
   Future<MovieModel> searchAnimationMovies(String query) async {
     final encodedQuery = Uri.encodeQueryComponent(query);

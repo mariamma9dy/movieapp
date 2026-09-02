@@ -5,11 +5,16 @@ import 'package:movieapp/Providers/MovieProvider.dart';
 import 'package:movieapp/Views/Widgets/MovieCard.dart';
 
 class MyListScreen extends StatelessWidget {
-  const MyListScreen({super.key});
+  final bool showAppBar;
+
+  const MyListScreen({
+    super.key,
+    this.showAppBar = true,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MovieProvider>(
+    final content = Consumer<MovieProvider>(
       builder: (context, provider, child) {
         if (provider.myList.isEmpty) {
           return const Center(
@@ -36,6 +41,17 @@ class MyListScreen extends StatelessWidget {
           },
         );
       },
+    );
+
+    if (!showAppBar) {
+      return content;
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('My List'),
+      ),
+      body: content,
     );
   }
 }
