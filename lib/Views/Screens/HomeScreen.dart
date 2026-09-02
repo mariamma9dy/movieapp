@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:movieapp/Controllers/FirebaseAuthController.dart';
 import 'package:movieapp/Controllers/MovieController.dart';
-import 'package:movieapp/Providers/FirebaseAuthProvider.dart';
 import 'package:movieapp/Providers/MovieProvider.dart';
 import 'package:movieapp/Views/Screens/FavoritesScreen.dart';
-import 'package:movieapp/Views/Screens/LogInScreen.dart';
 import 'package:movieapp/Views/Screens/MyListScreen.dart';
-import 'package:movieapp/Views/Widgets/MovieCard.dart';
+import 'package:movieapp/Views/Screens/ProfileScreen.dart';
+import 'package:movieapp/Views/Widgets/MovieSection.dart';
+import 'package:movieapp/Views/Widgets/SearchBar.dart';
+import 'package:movieapp/Views/Widgets/SearchResults.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,35 +18,32 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late FirebaseAuthController authController;
   late MovieController movieController;
 
   final TextEditingController searchController = TextEditingController();
 
   bool _moviesLoaded = false;
-  int _currentIndex = 0;
+  int _currentIndex = 0; // Pages: Home | Favourites | My List
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final authProvider = Provider.of<FirebaseAuthProvider>(
+    final movieProvider = Provider.of<MovieProvider>(
       context,
       listen: false,
     );
 
-    final movieProvider = Provider.of<MovieProvider>(context, listen: false);
-
-    authController = FirebaseAuthController(provider: authProvider);
-
-    movieController = MovieController(provider: movieProvider);
+    movieController = MovieController(
+      provider: movieProvider,
+    );
 
     if (!_moviesLoaded) {
       _moviesLoaded = true;
 
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await movieController.loadLocalMovies();
-        await movieController.getMovies();
+        await movieController.loadLocalMovies(); // Hive
+        await movieController.getMovies();  // TMDB
       });
     }
   }
@@ -57,121 +54,41 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // MARK: - Logout
-
-  Future<void> logOut() async {
-    final success = await authController.logOut();
-
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LogInScreen()),
-        (route) => false,
-      );
-    }
-  }
-
   // MARK: - Search
 
   void searchMovies(String value) {
     movieController.searchMovies(value);
   }
 
-  // MARK: - Movie Section
-
-  Widget _buildMovieSection({required String title, required List movies}) {
-    if (movies.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        SizedBox(
-          height: 280,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: movies.length,
-            separatorBuilder: (_, __) {
-              return const SizedBox(width: 12);
-            },
-            itemBuilder: (context, index) {
-              return SizedBox(
-                width: 155,
-                child: MovieCard(movie: movies[index]),
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 28),
-      ],
-    );
-  }
-
-  // MARK: - Search Results
-
-  Widget _buildSearchResults(MovieProvider provider) {
-    if (provider.isSearching) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (provider.searchErrorMessage != null) {
-      return Center(
-        child: Text(provider.searchErrorMessage!, textAlign: TextAlign.center),
-      );
-    }
-
-    if (provider.searchResults.isEmpty) {
-      return const Center(
-        child: Text(
-          'No animation movies found.',
-          style: TextStyle(fontSize: 16),
-        ),
-      );
-    }
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.55,
-      ),
-      itemCount: provider.searchResults.length,
-      itemBuilder: (context, index) {
-        return MovieCard(movie: provider.searchResults[index]);
-      },
-    );
+  void clearSearch(MovieProvider provider) {
+    searchController.clear();
+    provider.clearSearchResults();
+    setState(() {});
   }
 
   // MARK: - Home Movies
 
   Widget _buildMovies(MovieProvider provider) {
+
+    // Loading
+
     if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(),    
+      );
     }
 
-    if (provider.errorMessage != null) {
+    //MARK:- Retry
+
+    if (provider.errorMessage != null) { 
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(provider.errorMessage!, textAlign: TextAlign.center),
+            Text(
+              provider.errorMessage!,          
+              textAlign: TextAlign.center,
+            ),
 
             const SizedBox(height: 12),
 
@@ -183,23 +100,24 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-
+    
     return RefreshIndicator(
       onRefresh: movieController.getMovies,
+      //MARK:- Movie Section
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          _buildMovieSection(
+          MovieSection(
             title: '🔥 Popular Animation',
             movies: provider.popularMovies,
           ),
 
-          _buildMovieSection(
+          MovieSection(
             title: '⭐ Top Rated Animation',
             movies: provider.topRatedMovies,
           ),
 
-          _buildMovieSection(
+          MovieSection(
             title: '🆕 New Animation',
             movies: provider.nowPlayingMovies,
           ),
@@ -213,61 +131,76 @@ class _HomeScreenState extends State<HomeScreen> {
   // MARK: - Home Body
 
   Widget _buildHomeBody(MovieProvider provider) {
+    final isSearching = searchController.text.trim().isNotEmpty;
+
     return Column(
       children: [
-        // Search Field
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: TextField(
-            controller: searchController,
-            onChanged: searchMovies,
-            decoration: InputDecoration(
-              hintText: 'Search animation movies...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: searchController.text.isNotEmpty
-                  ? IconButton(
-                      onPressed: () {
-                        searchController.clear();
-                        provider.clearSearchResults();
-                        setState(() {});
-                      },
-                      icon: const Icon(Icons.clear),
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-          ),
+        SearchBarWidget(
+          controller: searchController,
+          onChanged: searchMovies,
+          onClear: () => clearSearch(provider),
         ),
 
-        // Content
         Expanded(
-          child: searchController.text.trim().isNotEmpty
-              ? _buildSearchResults(provider)
+          child: isSearching
+              ? SearchResults(
+                  isSearching: provider.isSearching,
+                  errorMessage: provider.searchErrorMessage,
+                  movies: provider.searchResults,
+                )
               : _buildMovies(provider),
         ),
       ],
     );
   }
 
+  // MARK: - AppBar
+
+  String get appBarTitle {
+    if (_currentIndex == 0) {
+      return 'ToonBox';
+    }
+
+    if (_currentIndex == 1) {
+      return 'Favourites';
+    }
+
+    return 'My List'; // 2
+  }
+
+  void openProfile() {       // Profile
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ProfileScreen(),
+      ),
+    );
+  }
+
+  // MARK: - Bottom Navigation
+
+  void changeTab(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _currentIndex == 0
-              ? 'ToonBox'
-              : _currentIndex == 1
-              ? 'Favourites'
-              : 'My List',
-        ),
+        title: Text(appBarTitle),
         actions: [
-          IconButton(onPressed: logOut, icon: const Icon(Icons.logout)),
+          IconButton(
+            onPressed: openProfile,
+            icon: const Icon(Icons.person_outline),
+          ),
         ],
       ),
 
-      body: Consumer<MovieProvider>(
+      // provider(notifyListeners) => rebuild ui 
+      
+      body: Consumer<MovieProvider>( // from main
         builder: (context, provider, child) {
           if (_currentIndex == 0) {
             return _buildHomeBody(provider);
@@ -281,25 +214,23 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
 
-      // MARK: - Bottom Navigation
+      //MARK:- UI
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onTap: changeTab,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite_border),
             activeIcon: Icon(Icons.favorite),
             label: 'Favourites',
           ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.playlist_play),
             activeIcon: Icon(Icons.playlist_play),

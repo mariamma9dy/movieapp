@@ -18,6 +18,7 @@ class MovieController {
   // MARK: - Get Home Movies
 
   Future<void> getMovies() async {
+    //print('REFRESH CALLED');
     provider.setLoading(true);
     provider.setError(null);
 
